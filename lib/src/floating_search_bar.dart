@@ -171,6 +171,10 @@ class FloatingSearchBar extends ImplicitAnimation {
   /// state.
   final Duration transitionDuration;
 
+  /// The duration of show and hide animation
+  /// state.
+  final Duration translateDuration;
+
   /// The curve for the animation between opened and closed
   /// state.
   final Curve transitionCurve;
@@ -323,6 +327,7 @@ class FloatingSearchBar extends ImplicitAnimation {
     this.closeOnBackdropTap = true,
     this.progress = false,
     this.transitionDuration = const Duration(milliseconds: 500),
+    this.translateDuration = const Duration(milliseconds: 950),
     this.transitionCurve = Curves.ease,
     this.debounceDelay = Duration.zero,
     this.title,
@@ -463,6 +468,7 @@ class _FloatingSearchBar extends StatefulWidget {
   final bool closeOnBackdropTap;
   final dynamic progress;
   final Duration transitionDuration;
+  final Duration translateDuration;
   final Curve transitionCurve;
   final Duration debounceDelay;
   final Text title;
@@ -495,6 +501,7 @@ class _FloatingSearchBar extends StatefulWidget {
     @required this.closeOnBackdropTap,
     @required this.progress,
     @required this.transitionDuration,
+    @required this.translateDuration,
     @required this.transitionCurve,
     @required this.debounceDelay,
     @required this.title,
@@ -524,8 +531,6 @@ class _FloatingSearchBar extends StatefulWidget {
 
 class FloatingSearchBarState extends State<_FloatingSearchBar>
     with TickerProviderStateMixin {
-  static const Duration _translateDuration = Duration(milliseconds: 950);
-
   dynamic get progress => widget.progress;
 
   FloatingSearchBarStyle get style => widget.style;
@@ -628,7 +633,7 @@ class FloatingSearchBarState extends State<_FloatingSearchBar>
 
     _translateController = AnimationController(
       vsync: this,
-      duration: _translateDuration,
+      duration: widget.translateDuration,
     );
 
     _translateAnimation = CurvedAnimation(
