@@ -17,7 +17,7 @@ Click [here](https://github.com/bnxm/material_floating_search_bar/blob/master/ex
 Add it to your `pubspec.yaml` file:
 ```yaml
 dependencies:
-  material_floating_search_bar: ^0.1.7
+  material_floating_search_bar: ^0.2.0
 ```
 Install packages from the command line
 ```
@@ -200,5 +200,19 @@ class MyAwesomePage extends StatelessWidget {
 }
 ```
 
+## Floating Search App Bar
 
+Sometimes a `FloatingSearchBar` might not be the most appriopriate search method for you're use case. For this reason there is also the `FloatingSearchAppBar`. It is a normal `AppBar` with easy search integration very similar to the normal `FloatingSearchBar`. 
 
+<img width="312px" alt="FloatingSearchAppBar example" src="https://raw.githubusercontent.com/bnxm/material_floating_search_bar/master/assets/floating_search_app_bar_demo.png"/>
+
+### Additional Customizations
+
+In addition to most of the fields from the `FloatingSearchBar`, `FloatingSearchAppBar` has the following additional fields:
+
+| Field                       | Description             |
+| --------------------------- | ----------------------- |
+| `colorOnScroll`                   | The color of the bar when a `Scrollable` inside the `body` was scrolled (i.e. the `Scrollable` is not at the top)
+| `liftOnScrollElevation`           | The elevation of the bar when a `Scrollable` inside the `body` was scrolled (i.e. the `Scrollable` is not at the top)
+| `alwaysOpened`                      | Whether the bar should be always in opened state.<br><br>This is useful for example, if you have a page dedicated only for search.
+| `hideKeyboardOnDownScroll`           | Hides the keyboard a `Scrollable` inside the `body` was scrolled and shows it again when the user scrolls to the top.

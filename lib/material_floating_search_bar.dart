@@ -6,3 +6,4 @@ export 'src/floating_search_bar_scroll_notifier.dart';
 export 'src/floating_search_bar_transition.dart';
 export 'src/widgets/circular_button.dart';
 export 'src/util/hooks.dart';
+export 'src/widgets/search_to_clear.dart';

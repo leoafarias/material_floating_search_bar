@@ -28,8 +28,7 @@ class MaterialFloatingSearchBarExample extends StatelessWidget {
     return MaterialApp(
       title: 'Material Floating Search Bar Example',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Montserrat',
+      theme: ThemeData.light().copyWith(
         iconTheme: const IconThemeData(
           color: Color(0xFF4d4d4d),
         ),
@@ -53,7 +52,15 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  int index = 0;
+  final controller = FloatingSearchBarController();
+
+  int _index = 0;
+  int get index => _index;
+  set index(int value) {
+    _index = min(value, 2);
+    _index == 2 ? controller.hide() : controller.show();
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,9 +94,10 @@ class _HomeState extends State<Home> {
     return Consumer<SearchModel>(
       builder: (context, model, _) {
         return FloatingSearchBar(
-          backgroundColor: Colors.white,
+          controller: controller,
           clearQueryOnClose: true,
           hint: 'Search for a new Place...',
+          iconColor: Colors.grey,
           transitionDuration: const Duration(milliseconds: 800),
           transitionCurve: Curves.easeInOutCubic,
           physics: const BouncingScrollPhysics(),
@@ -113,10 +121,11 @@ class _HomeState extends State<Home> {
       children: [
         Expanded(
           child: IndexedStack(
-            index: index,
+            index: min(index, 2),
             children: const [
               Map(),
               SomeScrollableContent(),
+              FloatingSearchAppBarExample(),
             ],
           ),
         ),
@@ -211,7 +220,7 @@ class _HomeState extends State<Home> {
 
   Widget buildBottomNavigationBar() {
     return BottomNavigationBar(
-      onTap: (value) => setState(() => index = min(value, 1)),
+      onTap: (value) => index = value,
       currentIndex: index,
       elevation: 16,
       type: BottomNavigationBarType.fixed,
@@ -244,6 +253,12 @@ class _HomeState extends State<Home> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 }
 
@@ -302,6 +317,30 @@ class SomeScrollableContent extends StatelessWidget {
     return FloatingSearchBarScrollNotifier(
       child: ListView.separated(
         padding: const EdgeInsets.only(top: kToolbarHeight),
+        itemCount: 100,
+        separatorBuilder: (context, index) => const Divider(),
+        itemBuilder: (context, index) {
+          return ListTile(
+            title: Text('Item $index'),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class FloatingSearchAppBarExample extends StatelessWidget {
+  const FloatingSearchAppBarExample({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingSearchAppBar(
+      title: Text('Title'),
+      transitionDuration: Duration(milliseconds: 800),
+      color: Colors.greenAccent.shade100,
+      colorOnScroll: Colors.greenAccent.shade200,
+      body: ListView.separated(
+        padding: EdgeInsets.zero,
         itemCount: 100,
         separatorBuilder: (context, index) => const Divider(),
         itemBuilder: (context, index) {

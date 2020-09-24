@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'floating_search_bar.dart';
-import 'util/util.dart';
 import 'widgets/widgets.dart';
 
-/// A widget to display in a row before or after the
+// ignore_for_file: public_member_api_docs
+
+/// A widget to be displayed in a row before or after the
 /// input text of a [FloatingSearchBar].
 ///
 /// Typically this widget wraps a [CircularButton].
@@ -59,19 +60,16 @@ class FloatingSearchBarAction extends StatefulWidget {
   factory FloatingSearchBarAction.hamburgerToBack({
     double size = 24,
     Color color,
-    bool showIfOpened,
-    bool showIfClosed,
   }) {
     return FloatingSearchBarAction(
-      showIfOpened: showIfOpened ?? true,
-      showIfClosed: showIfClosed ?? true,
+      showIfOpened: true,
       builder: (context, animation) {
         return CircularButton(
           size: size,
           onPressed: () {
-            final searchBar = FloatingSearchBar.of(context);
-            if (searchBar?.isOpen == true) {
-              searchBar?.close();
+            final bar = FloatingSearchAppBar.of(context);
+            if (bar?.isOpen == true) {
+              bar?.close();
             } else {
               Scaffold.of(context)?.openDrawer();
             }
@@ -79,7 +77,7 @@ class FloatingSearchBarAction extends StatefulWidget {
           icon: AnimatedIcon(
             icon: AnimatedIcons.menu_arrow,
             progress: animation,
-            color: color ?? FloatingSearchBar.of(context)?.iconColor,
+            color: color,
             size: size,
           ),
         );
@@ -92,34 +90,63 @@ class FloatingSearchBarAction extends StatefulWidget {
   factory FloatingSearchBarAction.searchToClear({
     double size = 24,
     Color color,
-    bool showIfOpened,
-    bool showIfClosed,
+    bool showIfClosed = true,
     Duration duration = const Duration(milliseconds: 900),
   }) {
     return FloatingSearchBarAction(
-      showIfOpened: showIfOpened ?? true,
-      showIfClosed: showIfClosed ?? true,
+      showIfOpened: true,
+      showIfClosed: showIfClosed,
       builder: (context, animation) {
-        final searchBar = FloatingSearchBar.of(context);
+        final bar = FloatingSearchAppBar.of(context);
 
         return ValueListenableBuilder<String>(
-          valueListenable: searchBar.queryListener,
+          valueListenable: bar.queryNotifer,
           builder: (context, value, _) {
             final isEmpty = value.isEmpty;
 
             return SearchToClear(
               isEmpty: isEmpty,
               size: size,
-              color: color ?? searchBar?.iconColor,
-              duration: (duration ?? searchBar.duration) * 0.5,
+              color: color ?? bar?.style?.iconColor,
+              duration: (duration ?? bar.transitionDuration) * 0.5,
               onTap: () {
                 if (!isEmpty) {
-                  searchBar.clear();
+                  bar.clear();
                 } else {
-                  searchBar.isOpen = !searchBar.isOpen;
+                  bar.isOpen =
+                      !bar.isOpen || (!bar.hasFocus && bar.isAlwaysOpened);
                 }
               },
             );
+          },
+        );
+      },
+    );
+  }
+
+  factory FloatingSearchBarAction.back({
+    double size = 24,
+    Color color,
+    bool showIfClosed = false,
+  }) {
+    return FloatingSearchBarAction(
+      showIfClosed: showIfClosed,
+      showIfOpened: true,
+      builder: (context, animation) {
+        final canPop = Navigator.canPop(context);
+
+        return CircularButton(
+          tooltip: 'Back',
+          size: size,
+          icon: Icon(Icons.arrow_back, color: color, size: size),
+          onPressed: () {
+            final bar = FloatingSearchAppBar.of(context);
+
+            if (bar.isOpen && !bar.isAlwaysOpened) {
+              bar.close();
+            } else if (canPop) {
+              Navigator.pop(context);
+            }
           },
         );
       },
@@ -162,116 +189,94 @@ class _FloatingSearchBarActionState extends State<FloatingSearchBarAction> {
       return widget.child;
     }
 
-    final searchBar = FloatingSearchBar.of(context);
-    assert(searchBar != null);
+    final bar = FloatingSearchAppBar.of(context);
+    assert(bar != null, 'No ancestor FloatingSearchAppBar could be found!e');
 
-    return widget.builder(context, searchBar.animation);
+    return widget.builder(context, bar.transitionAnimation);
   }
 }
 
-// ignore_for_file: public_member_api_docs
-class SearchToClear extends StatelessWidget {
-  final bool isEmpty;
-  final Duration duration;
-  final VoidCallback onTap;
-  final Color color;
-  final double size;
-  const SearchToClear({
+/// Creates a row for [FloatingSearchBarActions].
+class FloatingSearchActionBar extends StatefulWidget {
+  final Animation animation;
+  final List<Widget> actions;
+  final IconThemeData iconTheme;
+  const FloatingSearchActionBar({
     Key key,
-    @required this.isEmpty,
-    this.duration = const Duration(milliseconds: 500),
-    @required this.onTap,
-    this.color,
-    this.size = 24.0,
+    @required this.animation,
+    @required this.actions,
+    this.iconTheme,
   }) : super(key: key);
 
   @override
+  _FloatingSearchActionBarState createState() =>
+      _FloatingSearchActionBarState();
+}
+
+class _FloatingSearchActionBarState extends State<FloatingSearchActionBar> {
+  @override
   Widget build(BuildContext context) {
-    return AnimatedValue(
-      value: isEmpty ? 0.0 : 1.0,
-      duration: duration,
-      builder: (context, value) {
-        return CircularButton(
-          onPressed: onTap,
-          icon: CustomPaint(
-            size: Size.square(size),
-            painter: _SearchToClearPainter(
-              color ?? Theme.of(context).iconTheme.color,
-              value,
-            ),
+    return AnimatedBuilder(
+      animation: widget.animation,
+      builder: (context, child) {
+        return IconTheme(
+          data: widget.iconTheme,
+          child: Row(
+            children: _mapActions(),
           ),
         );
       },
     );
   }
-}
 
-class _SearchToClearPainter extends CustomPainter {
-  final Color color;
-  final double progress;
-  _SearchToClearPainter(
-    this.color,
-    this.progress,
-  );
+  List<Widget> _mapActions() {
+    final actions = widget.actions ?? const <Widget>[];
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final t = progress;
+    final animation = ValleyingTween().animate(widget.animation);
+    final isOpen = widget.animation.value >= 0.5;
 
-    final circleProgress = interval(0.0, 0.4, t, curve: Curves.easeIn);
-    final lineProgress = interval(0.3, 0.8, t, curve: Curves.ease);
-    final sLineProgress = interval(0.5, 1.0, t, curve: Curves.easeOut);
+    var openCount = 0;
+    var closedCount = 0;
+    for (final action in actions) {
+      if (action is FloatingSearchBarAction) {
+        if (action.showIfOpened) openCount++;
+        if (action.showIfClosed) closedCount++;
+      }
+    }
 
-    canvas.clipRect(Rect.fromLTWH(0, 0, w, h));
-    const padding = 0.225;
-    canvas.translate(w * (padding / 2), h * (padding / 2));
-    canvas.scale(1 - padding, 1 - padding);
+    final currentActions = List<Widget>.from(actions)
+      ..removeWhere((action) {
+        if (action is FloatingSearchBarAction) {
+          return (isOpen && !action.showIfOpened) ||
+              (!isOpen && !action.showIfClosed);
+        } else {
+          return false;
+        }
+      });
 
-    final sw = w * 0.125;
-    final paint = Paint()
-      ..color = color
-      ..isAntiAlias = true
-      ..strokeWidth = sw
-      ..style = PaintingStyle.stroke;
+    return currentActions.map((action) {
+      if (action is FloatingSearchBarAction) {
+        if (action.isAlwaysShown) return action;
 
-    final radius = w * 0.26;
-    final offset = radius + (sw / 2);
+        final index = currentActions.reversed.toList().indexOf(action);
+        final shouldScale = index <= ((isOpen ? closedCount : openCount) - 1);
+        if (shouldScale) {
+          return ScaleTransition(
+            scale: animation,
+            child: action,
+          );
+        } else {
+          return SizeFadeTransition(
+            animation: animation,
+            axis: Axis.horizontal,
+            axisAlignment: 1.0,
+            sizeFraction: 0.25,
+            child: Center(child: action),
+          );
+        }
+      }
 
-    // Draws the handle of the loop.
-    final lineStart = Offset(radius * 2, radius * 2);
-    final lineEnd = Offset(sw, sw);
-    canvas.drawLine(
-      Offset.lerp(lineStart, lineEnd, lineProgress),
-      Offset(w - sw, h - sw),
-      paint,
-    );
-
-    // Draws the circle of the loop.
-    final circleStart = Offset(offset, offset);
-    final circleEnd = Offset(-offset, -offset);
-    final circle = Path()
-      ..addArc(
-        Rect.fromCircle(
-          center: Offset.lerp(circleStart, circleEnd, lineProgress),
-          radius: radius,
-        ),
-        32.0.radians,
-        (360 * (1 - circleProgress)).radians,
-      );
-    canvas.drawPath(circle, paint);
-
-    // Draws the second line that will make the cross.
-    final sLineStart = Offset(sw, h - sw);
-    final sLineEnd = Offset(w - sw, sw);
-    canvas.drawLine(
-      sLineStart,
-      Offset.lerp(sLineStart, sLineEnd, sLineProgress),
-      paint,
-    );
+      return action;
+    }).toList();
   }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }

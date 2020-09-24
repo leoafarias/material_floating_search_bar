@@ -26,7 +26,7 @@ abstract class FloatingSearchBarTransition {
   FloatingSearchBarState searchBar;
   BuildContext get context => searchBar?.context;
   Animation get animation => searchBar?.animation;
-  double get t => searchBar?.value;
+  double get t => searchBar?.v ?? 0.0;
 
   double get offset => searchBar?.offset ?? 0.0;
   double get fullHeight => context?.height ?? height;
